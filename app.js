@@ -22,11 +22,19 @@ var svg = d3.select(".chart")
 var chartGroup = svg.append("g")
   .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
+var circRadius;
+function crGet() {
+  if (width <= 530) {
+    circRadius = 5;
+  }
+  else {
+    circRadius = 10;
+  }
+}
+crGet();
 
 // Import Data
 d3.csv("assets/data/data.csv").then(function(healthData) {
-
-
 
 	// Step 1: Parse Data/Cast as numbers
 	    // ==============================
@@ -38,7 +46,7 @@ d3.csv("assets/data/data.csv").then(function(healthData) {
 	      data.healthcare = +data.healthcare;
 	      data.obesity = +data.obesity;
 	      //console.log(data.age)
-	      console.log(data.smokes)
+	    //   console.log(data.smokes)
 	    });
 
 	    // Step 2: Create scale functions
@@ -48,7 +56,7 @@ d3.csv("assets/data/data.csv").then(function(healthData) {
 	      .range([0, width]);
 
 	    var yLinearScale = d3.scaleLinear()
-	      .domain([0, d3.max(healthData, d => d.smokes)])
+	      .domain([0, d3.max(healthData, d => d.smokes) + 5])
 	      .range([height, 0]);
 
 
@@ -70,23 +78,47 @@ d3.csv("assets/data/data.csv").then(function(healthData) {
 
 
 	    // Step 5: Create Circles
-	    // ==============================
-	    var circlesGroup = chartGroup.selectAll("circle")
-	    .data(healthData)
-	    .enter()
-	    .append("circle")
-	    .attr("cx", d => xLinearScale(d.age))
-	    .attr("cy", d => yLinearScale(d.smokes))
-	    .attr("r", "20")
-	    .attr("fill", "pink")
-	    .attr("opacity", ".5")
-	    .append("text").text(d => d.abbr);
+		// ==============================
+		var theCircles = svg.selectAll("g theCircles").data(healthData).enter();
+		
+		theCircles
+			.append("text")
+			.text(function(d){return d.abbr})
+	    	.attr("dx", function(d){
+				return xLinearScale(d.age)
+			})
+	    	.attr("dy", function(d) {
+				return yLinearScale(d.smokes) + circRadius / 2.5;
+			})
+			.attr("fill", "black")
+			.attr("font-size", circRadius)
+			.attr("class", "stateText")
 
-	  
-
-               
-
-
+	    theCircles
+			.append("circle")
+			.attr("cx", d => xLinearScale(d.age))
+			.attr("cy", d => yLinearScale(d.smokes))
+			.attr("r", circRadius)
+			.attr("class", function(d) {
+				return "stateCircle " + d.abbr;
+			})
+			.attr("fill", "pink")
+			.attr("opacity", ".5")
+			// Hover rules
+			.on("mouseover", function(d) {
+			// Show the tooltip
+				toolTip.show(d, this);
+				// Highlight the state circle's border
+				d3.select(this).style("stroke", "#323232");
+			})
+			.on("mouseout", function(d) {
+				// Remove the tooltip
+				toolTip.hide(d);
+				// Remove highlight
+				d3.select(this).style("stroke", "#e3e3e3");
+			});
+		
+			
 	    // Step 6: Initialize tool tip
       // ==============================
       	var toolTip = d3.tip()
@@ -106,13 +138,13 @@ d3.csv("assets/data/data.csv").then(function(healthData) {
 
 	    // Step 8: Create event listeners to display and hide the tooltip
 	    // ==============================
-	    circlesGroup.on("click", function(data) {
-	      toolTip.show(data, this);
-	    })
-	    // onmouseout event
-	      .on("mouseout", function(data, index) {
-	        toolTip.hide(data);
-	      });
+	    // chartGroup.on("click", function(data) {
+	    //   toolTip.show(data, this);
+	    // })
+	    // // onmouseout event
+	    //   .on("mouseout", function(data, index) {
+	    //     toolTip.hide(data);
+	    //   });
 
 	    // Create axes labels
 	    chartGroup.append("text")
